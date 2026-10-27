@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 
-const CLASS = "font-hand text-[1.05rem] whitespace-nowrap text-ink-soft min-[30rem]:text-xl";
+const CLASS = "font-hand text-[1.05rem] whitespace-nowrap text-ink-soft note:text-xl";
 
 // 한국 시간 기준 오늘 날짜. 요청 시점에 계산하므로 <Suspense> 안에서 쓴다
 export default async function TodayDate() {

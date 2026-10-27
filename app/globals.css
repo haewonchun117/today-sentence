@@ -37,6 +37,9 @@
   }
 }
 
+/* 데모의 @media (max-width: 480px) 와 같은 경계: 481px 부터 넓은 화면 */
+@custom-variant note (@media (width > 480px));
+
 @theme inline {
   --color-paper: var(--paper);
   --color-line: var(--line);
@@ -72,7 +75,7 @@
 @utility bg-notebook {
   background-color: var(--paper);
   background-image: repeating-linear-gradient(180deg, transparent 0 31px, var(--line) 31px 32px);
-  @media (width >= 30rem) {
+  @media (width > 480px) {
     background-image:
       linear-gradient(90deg, transparent 38px, var(--margin) 38px, var(--margin) 40px, transparent 40px),
       repeating-linear-gradient(180deg, transparent 0 31px, var(--line) 31px 32px);

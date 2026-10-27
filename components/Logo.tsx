@@ -5,7 +5,7 @@ export default function Logo() {
     <Link
       href="/"
       aria-label="오늘의 문장 홈"
-      className="flex items-center gap-2 text-[1.6rem] tracking-[-0.02em] text-ink no-underline"
+      className="flex items-center gap-2 text-[1.6rem] tracking-[-0.02em] whitespace-nowrap text-ink no-underline"
     >
       <svg viewBox="0 0 40 40" aria-hidden="true" className="size-[38px] flex-none">
         <g fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">

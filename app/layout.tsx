@@ -37,8 +37,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className={`${jua.variable} ${gaegu.variable} antialiased`}>
       <body className="bg-notebook min-h-screen pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
-        <div className="relative mx-auto max-w-[620px] px-[18px] pt-5 pb-40 min-[30rem]:pr-5 min-[30rem]:pl-14">
-          <header className="flex items-center justify-between gap-3 pt-2">
+        <div className="relative mx-auto max-w-[620px] px-[18px] pt-5 pb-40 note:pr-5 note:pl-14">
+          {/* 아주 좁은 화면에서는 날짜가 로고 아래 줄로 내려간다 */}
+          <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-2">
             <Logo />
             <Suspense fallback={<TodayDateFallback />}>
               <TodayDate />

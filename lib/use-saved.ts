@@ -68,9 +68,15 @@ function setPending(sentenceId: number, on: boolean) {
 
 async function toggle(deviceId: string, sentence: Sentence) {
   if (state.pendingIds.has(sentence.id)) return;
-  const wasSaved = state.ids.has(sentence.id);
   setPending(sentence.id, true);
   try {
+    // 목록을 못 받아온 상태면 저장 여부를 알 수 없으니 먼저 다시 받아 본다
+    if (state.status === "error") {
+      await load(deviceId);
+      if (state.status === "error") throw new Error("saved list unavailable");
+    }
+    const wasSaved = state.ids.has(sentence.id);
+
     const res = await fetch("/api/saved", {
       method: wasSaved ? "DELETE" : "POST",
       headers: { "Content-Type": "application/json" },
@@ -107,10 +113,13 @@ export function useSaved({ refresh = false }: Options = {}) {
 
   return {
     ...saved,
-    // 아직 목록을 받아오지 못했으면 저장 여부를 모르니 버튼을 막는다
-    ready: deviceId !== null && saved.status === "ready",
-    toggle: (sentence: Sentence) => {
-      if (deviceId) void toggle(deviceId, sentence);
+    // 목록을 받아오는 중이면 저장 여부를 모르니 버튼을 막는다 (실패했으면 누를 때 다시 받는다)
+    ready: deviceId !== null && (saved.status === "ready" || saved.status === "error"),
+    toggle: async (sentence: Sentence) => {
+      if (deviceId) await toggle(deviceId, sentence);
+    },
+    reload: () => {
+      if (deviceId) void load(deviceId);
     },
   };
 }

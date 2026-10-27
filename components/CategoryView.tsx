@@ -4,15 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import SentenceCard from "@/components/SentenceCard";
 import SketchButton from "@/components/SketchButton";
 import { categoryBg } from "@/lib/categories";
-import { hopBunny } from "@/lib/ui-events";
+import { hopBunny, showToast } from "@/lib/ui-events";
 import { useSaved } from "@/lib/use-saved";
 import type { Category, Sentence } from "@/lib/types";
 
 const LOAD_ERROR = "문장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";
+const DRAW_ERROR = "새 문장을 불러오지 못했어요";
 
 export default function CategoryView() {
   const [categories, setCategories] = useState<Category[] | null>(null);
   const [categoriesFailed, setCategoriesFailed] = useState(false);
+  // [다시 시도]를 누를 때마다 올려서 카테고리를 다시 받는다
+  const [categoriesAttempt, setCategoriesAttempt] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [sentence, setSentence] = useState<Sentence | null>(null);
   const [drawFailed, setDrawFailed] = useState(false);
@@ -35,7 +38,12 @@ export default function CategoryView() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [categoriesAttempt]);
+
+  function retryCategories() {
+    setCategoriesFailed(false);
+    setCategoriesAttempt((n) => n + 1);
+  }
 
   async function draw(categoryId: string) {
     const request = ++latestRequest.current;
@@ -57,8 +65,13 @@ export default function CategoryView() {
       hopBunny();
     } catch {
       if (request !== latestRequest.current) return;
-      setSentence(null);
-      setDrawFailed(true);
+      if (exclude !== null) {
+        // 같은 카테고리에서 다시 뽑다 실패하면 보던 문장은 그대로 둔다
+        showToast(DRAW_ERROR);
+      } else {
+        setSentence(null);
+        setDrawFailed(true);
+      }
     } finally {
       if (request === latestRequest.current) setDrawing(false);
     }
@@ -87,28 +100,37 @@ export default function CategoryView() {
         })}
       </div>
 
-      {selected === null ? (
-        <p className="font-hand text-[1.35rem] text-ink-soft">
-          {categoriesFailed
-            ? "카테고리를 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
-            : "지금 필요한 문장을 골라 보세요."}
+      {categoriesFailed ? (
+        <div>
+          <p className="mb-[18px] font-hand text-[1.35rem] text-ink-soft">
+            카테고리를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.
+          </p>
+          <SketchButton onClick={retryCategories}>다시 시도</SketchButton>
+        </div>
+      ) : selected === null ? (
+        <p className="font-hand text-[1.35rem] text-ink-soft" aria-busy={categories === null}>
+          {categories === null ? "카테고리를 불러오는 중…" : "지금 필요한 문장을 골라 보세요."}
         </p>
       ) : (
         <>
-          <SentenceCard
-            key={drawCount}
-            sentence={sentence}
-            animate={drawCount > 0}
-            placeholder={drawFailed ? LOAD_ERROR : "문장을 고르는 중…"}
-          />
+          {/* 새 문장을 화면 읽기 프로그램이 읽어 주도록 */}
+          <div aria-live="polite" aria-busy={drawing}>
+            <SentenceCard
+              key={drawCount}
+              sentence={sentence}
+              animate={drawCount > 0}
+              placeholder={drawFailed ? LOAD_ERROR : "문장을 고르는 중…"}
+            />
+          </div>
           <div className="mt-7 flex flex-wrap gap-3">
-            <SketchButton onClick={() => draw(selected)} disabled={drawing}>
+            <SketchButton onClick={() => draw(selected)} busy={drawing}>
               다른 문장 뽑기
             </SketchButton>
             <SketchButton
               variant="ghost"
               aria-pressed={saved}
-              disabled={!sentence || !ready || pendingIds.has(sentence.id)}
+              disabled={!sentence || !ready}
+              busy={sentence !== null && pendingIds.has(sentence.id)}
               onClick={() => sentence && toggle(sentence)}
             >
               {saved ? "저장됨" : "저장하기"}

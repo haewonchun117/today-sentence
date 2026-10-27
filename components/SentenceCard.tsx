@@ -12,7 +12,7 @@ type Props = {
 export default function SentenceCard({ sentence, animate = false, placeholder }: Props) {
   return (
     <div
-      className={`torn flex min-h-[230px] -rotate-[0.8deg] flex-col justify-center px-[22px] pt-6 pb-7 min-[30rem]:px-[30px] min-[30rem]:pt-[30px] min-[30rem]:pb-[34px] ${
+      className={`torn flex min-h-[230px] -rotate-[0.8deg] flex-col justify-center px-[22px] pt-6 pb-7 note:px-[30px] note:pt-[30px] note:pb-[34px] ${
         animate ? "animate-flip" : ""
       }`}
     >

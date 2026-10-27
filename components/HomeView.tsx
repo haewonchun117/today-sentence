@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import SentenceCard from "@/components/SentenceCard";
 import SketchButton from "@/components/SketchButton";
-import { hopBunny } from "@/lib/ui-events";
+import { hopBunny, showToast } from "@/lib/ui-events";
 import { useSaved } from "@/lib/use-saved";
 import type { Sentence } from "@/lib/types";
 
 const LOAD_ERROR = "문장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";
+const DRAW_ERROR = "새 문장을 불러오지 못했어요";
 
 export default function HomeView() {
   const [sentence, setSentence] = useState<Sentence | null>(null);
@@ -42,30 +43,37 @@ export default function HomeView() {
       setDrawCount((n) => n + 1);
       hopBunny();
     } catch {
-      if (!sentence) setPlaceholder(LOAD_ERROR);
+      // 보던 문장이 있으면 그대로 두고 알려만 준다
+      if (sentence) showToast(DRAW_ERROR);
+      else setPlaceholder(LOAD_ERROR);
     } finally {
       setDrawing(false);
     }
   }
 
   const saved = sentence !== null && savedIds.has(sentence.id);
+  const loading = drawing || (sentence === null && placeholder !== LOAD_ERROR);
 
   return (
     <section>
-      <SentenceCard
-        key={drawCount}
-        sentence={sentence}
-        animate={drawCount > 0}
-        placeholder={placeholder}
-      />
+      {/* 새 문장을 화면 읽기 프로그램이 읽어 주도록 */}
+      <div aria-live="polite" aria-busy={loading}>
+        <SentenceCard
+          key={drawCount}
+          sentence={sentence}
+          animate={drawCount > 0}
+          placeholder={placeholder}
+        />
+      </div>
       <div className="mt-7 flex flex-wrap gap-3">
-        <SketchButton onClick={draw} disabled={drawing}>
+        <SketchButton onClick={draw} busy={drawing}>
           오늘의 문장 뽑기
         </SketchButton>
         <SketchButton
           variant="ghost"
           aria-pressed={saved}
-          disabled={!sentence || !ready || pendingIds.has(sentence.id)}
+          disabled={!sentence || !ready}
+          busy={sentence !== null && pendingIds.has(sentence.id)}
           onClick={() => sentence && toggle(sentence)}
         >
           {saved ? "저장됨" : "저장하기"}
