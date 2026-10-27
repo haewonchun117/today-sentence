@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import SavedMemo from "@/components/SavedMemo";
 import SketchButton, { sketchButtonClass } from "@/components/SketchButton";
 import { categoryBg } from "@/lib/categories";
+import { setBunnySleeping } from "@/lib/ui-events";
 import { useSaved } from "@/lib/use-saved";
 import type { Sentence } from "@/lib/types";
 
@@ -12,6 +13,13 @@ export default function SavedView() {
   const { items, status, pendingIds, toggle, reload, saveMemo } = useSaved({ refresh: true });
   const headingRef = useRef<HTMLHeadingElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const empty = status === "ready" && items.length === 0;
+
+  // 저장한 문장이 하나도 없으면 언덕 위 토끼가 잠든다. 다른 화면으로 가면 깬다
+  useEffect(() => {
+    setBunnySleeping(empty);
+    return () => setBunnySleeping(false);
+  }, [empty]);
 
   // 저장 취소한 항목이 사라지면 그 버튼에 있던 키보드 포커스도 사라지므로
   // 같은 자리의 다음 항목 [저장 취소] 버튼(없으면 제목)으로 옮긴다

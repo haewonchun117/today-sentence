@@ -2,7 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { useDeviceId } from "@/lib/device-id";
-import { showToast } from "@/lib/ui-events";
+import { popHeart, showToast } from "@/lib/ui-events";
 import type { SavedSentence, Sentence } from "@/lib/types";
 
 // 저장한 문장은 화면 전체(메뉴 개수, 홈, 카테고리, 저장한 문장)가 함께 보므로
@@ -92,6 +92,7 @@ async function toggle(deviceId: string, sentence: Sentence) {
         : [{ savedAt: new Date().toISOString(), memo: "", memoUpdatedAt: null, sentence }, ...others],
     });
     showToast(wasSaved ? "저장을 취소했어요" : "저장했어요");
+    if (!wasSaved) popHeart();
   } catch {
     showToast("잠시 후 다시 시도해 주세요");
   } finally {
