@@ -9,9 +9,9 @@ import {
   serverError,
   toSentence,
 } from "@/lib/api";
-import type { SavedSentence } from "@/lib/types";
+import { MEMO_MAX_LENGTH, type SavedSentence } from "@/lib/types";
 
-// POST / DELETE 공통 body 검증
+// POST / PATCH / DELETE 공통 body 검증
 async function readBody(request: NextRequest) {
   let body: unknown;
   try {
@@ -19,11 +19,12 @@ async function readBody(request: NextRequest) {
   } catch {
     return { error: badRequest("JSON body 가 필요해요.") };
   }
-  const { deviceId, sentenceId } = (body ?? {}) as Record<string, unknown>;
+  const fields = (body ?? {}) as Record<string, unknown>;
+  const { deviceId, sentenceId } = fields;
   if (!isDeviceId(deviceId)) return { error: badRequest("deviceId 형식이 올바르지 않아요.") };
   const id = parseId(sentenceId);
   if (id === null) return { error: badRequest("sentenceId 는 양의 정수여야 해요.") };
-  return { deviceId, sentenceId: id };
+  return { deviceId, sentenceId: id, fields };
 }
 
 export async function GET(request: NextRequest) {
@@ -33,14 +34,22 @@ export async function GET(request: NextRequest) {
   try {
     const { data, error } = await getSupabase()
       .from("saved_sentences")
-      .select(`created_at, sentence:sentences(${SENTENCE_SELECT})`)
+      .select(`created_at, memo, memo_updated_at, sentence:sentences(${SENTENCE_SELECT})`)
       .eq("device_id", deviceId)
       .order("created_at", { ascending: false });
     if (error) throw error;
 
     const saved: SavedSentence[] = data.flatMap((row) => {
       const sentence = Array.isArray(row.sentence) ? row.sentence[0] : row.sentence;
-      return sentence ? [{ savedAt: row.created_at, sentence: toSentence(sentence) }] : [];
+      if (!sentence) return [];
+      return [
+        {
+          savedAt: row.created_at,
+          memo: row.memo ?? "",
+          memoUpdatedAt: row.memo_updated_at,
+          sentence: toSentence(sentence),
+        },
+      ];
     });
     return Response.json({ saved });
   } catch (err) {
@@ -64,6 +73,38 @@ export async function POST(request: NextRequest) {
     if (error) throw error;
 
     return Response.json({ ok: true });
+  } catch (err) {
+    return serverError(err);
+  }
+}
+
+// 내 생각 메모 쓰기/수정/지우기. 빈 문자열(또는 null)을 보내면 메모를 지운다
+export async function PATCH(request: NextRequest) {
+  const body = await readBody(request);
+  if ("error" in body) return body.error;
+
+  const { memo } = body.fields;
+  if (memo !== null && typeof memo !== "string") {
+    return badRequest("memo 는 문자열이어야 해요. 지우려면 빈 문자열을 보내 주세요.");
+  }
+  const text = (memo ?? "").trim();
+  if (text.length > MEMO_MAX_LENGTH) {
+    return badRequest(`메모는 ${MEMO_MAX_LENGTH}자까지 쓸 수 있어요.`);
+  }
+
+  try {
+    // memo 컬럼은 not null default '' 이므로 메모가 없으면 빈 문자열로 둔다
+    const { data, error } = await getSupabase()
+      .from("saved_sentences")
+      .update({ memo: text, memo_updated_at: text ? new Date().toISOString() : null })
+      .eq("device_id", body.deviceId)
+      .eq("sentence_id", body.sentenceId)
+      .select("memo, memo_updated_at")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return notFound("저장하지 않은 문장이에요.");
+
+    return Response.json({ memo: data.memo, memoUpdatedAt: data.memo_updated_at });
   } catch (err) {
     return serverError(err);
   }

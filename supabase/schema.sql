@@ -20,13 +20,19 @@ create index if not exists sentences_category_idx on sentences(category_id);
 
 -- 3) 저장한 문장 (로그인 없이 기기별 device_id 로 구분)
 create table if not exists saved_sentences (
-  id          bigint generated always as identity primary key,
-  device_id   uuid   not null,
-  sentence_id bigint not null references sentences(id) on delete cascade,
-  created_at  timestamptz not null default now(),
+  id              bigint generated always as identity primary key,
+  device_id       uuid   not null,
+  sentence_id     bigint not null references sentences(id) on delete cascade,
+  created_at      timestamptz not null default now(),
+  memo            text   not null default '',  -- 내 생각 메모 (없으면 빈 문자열, API 에서 500자 제한)
+  memo_updated_at timestamptz,                 -- 메모를 마지막으로 쓴 시각 (메모가 없으면 null)
   unique (device_id, sentence_id)
 );
 create index if not exists saved_device_idx on saved_sentences(device_id);
+
+-- 메모 기능 이전에 만든 DB 라면 컬럼만 추가
+alter table saved_sentences add column if not exists memo text not null default '';
+alter table saved_sentences add column if not exists memo_updated_at timestamptz;
 
 -- RLS 켜기: 브라우저에서 DB에 직접 접근하지 못하게 막고,
 -- 모든 읽기/쓰기는 서버(Next.js API Routes)에서 service role key 로만 처리

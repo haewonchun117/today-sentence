@@ -2,24 +2,27 @@
 
 import Link from "next/link";
 import { useRef } from "react";
+import SavedMemo from "@/components/SavedMemo";
 import SketchButton, { sketchButtonClass } from "@/components/SketchButton";
 import { categoryBg } from "@/lib/categories";
 import { useSaved } from "@/lib/use-saved";
 import type { Sentence } from "@/lib/types";
 
 export default function SavedView() {
-  const { items, status, pendingIds, toggle, reload } = useSaved({ refresh: true });
+  const { items, status, pendingIds, toggle, reload, saveMemo } = useSaved({ refresh: true });
   const headingRef = useRef<HTMLHeadingElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
   // 저장 취소한 항목이 사라지면 그 버튼에 있던 키보드 포커스도 사라지므로
-  // 같은 자리의 다음 항목 버튼(없으면 제목)으로 옮긴다
-  async function unsave(sentence: Sentence, index: number) {
+  // 같은 자리의 다음 항목 [저장 취소] 버튼(없으면 제목)으로 옮긴다
+  async function unsave(sentence: Sentence, memo: string, index: number) {
+    // 저장을 취소하면 메모도 함께 지워지므로 메모가 있으면 한 번 묻는다
+    if (memo && !window.confirm("메모도 함께 지워져요. 저장을 취소할까요?")) return;
     await toggle(sentence);
     requestAnimationFrame(() => {
       const active = document.activeElement;
       if (active && active !== document.body && document.contains(active)) return;
-      const buttons = listRef.current?.querySelectorAll<HTMLButtonElement>("button");
+      const buttons = listRef.current?.querySelectorAll<HTMLButtonElement>("button[data-unsave]");
       const next = buttons?.[index] ?? buttons?.[index - 1];
       (next ?? headingRef.current)?.focus();
     });
@@ -29,7 +32,7 @@ export default function SavedView() {
   if (items.length > 0) {
     body = (
       <ul ref={listRef} className="grid gap-[22px]">
-        {items.map(({ sentence }, index) => {
+        {items.map(({ sentence, memo }, index) => {
           const pending = pendingIds.has(sentence.id);
           return (
             <li
@@ -38,6 +41,11 @@ export default function SavedView() {
             >
               <p className="font-hand text-2xl leading-[1.35] font-bold break-keep">{sentence.content}</p>
               <p className="mt-2 text-right font-hand text-[1.15rem] text-ink-soft">— {sentence.author}</p>
+              <SavedMemo
+                sentenceContent={sentence.content}
+                memo={memo}
+                onSave={(next) => saveMemo(sentence.id, next)}
+              />
               <div className="mt-3 flex items-center justify-between gap-2.5">
                 <span
                   className={`rounded-sketch-tag border-[1.5px] border-ink px-3 py-0.5 text-[0.9rem] ${categoryBg(sentence.category.id)}`}
@@ -46,7 +54,8 @@ export default function SavedView() {
                 </span>
                 <button
                   type="button"
-                  onClick={pending ? undefined : () => unsave(sentence, index)}
+                  data-unsave
+                  onClick={pending ? undefined : () => unsave(sentence, memo, index)}
                   aria-disabled={pending || undefined}
                   className="p-1 text-[0.95rem] text-ink-soft underline underline-offset-[3px] aria-disabled:cursor-progress aria-disabled:opacity-60"
                 >

@@ -120,7 +120,7 @@ button {
   cursor: pointer;
 }
 
-:where(button, a):focus-visible {
+:where(button, a, textarea):focus-visible {
   outline: 3px dashed var(--ink);
   outline-offset: 3px;
 }

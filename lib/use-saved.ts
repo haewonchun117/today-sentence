@@ -87,13 +87,40 @@ async function toggle(deviceId: string, sentence: Sentence) {
     version++;
     const others = state.items.filter((item) => item.sentence.id !== sentence.id);
     setState({
-      items: wasSaved ? others : [{ savedAt: new Date().toISOString(), sentence }, ...others],
+      items: wasSaved
+        ? others
+        : [{ savedAt: new Date().toISOString(), memo: "", memoUpdatedAt: null, sentence }, ...others],
     });
     showToast(wasSaved ? "저장을 취소했어요" : "저장했어요");
   } catch {
     showToast("잠시 후 다시 시도해 주세요");
   } finally {
     setPending(sentence.id, false);
+  }
+}
+
+// 내 생각 메모 저장. 빈 문자열이면 지운다. 성공하면 true
+async function saveMemo(deviceId: string, sentenceId: number, memo: string): Promise<boolean> {
+  try {
+    const res = await fetch("/api/saved", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deviceId, sentenceId, memo }),
+    });
+    if (!res.ok) throw new Error(String(res.status));
+    const data: { memo: string; memoUpdatedAt: string | null } = await res.json();
+
+    version++;
+    setState({
+      items: state.items.map((item) =>
+        item.sentence.id === sentenceId ? { ...item, memo: data.memo, memoUpdatedAt: data.memoUpdatedAt } : item,
+      ),
+    });
+    showToast(data.memo ? "메모를 저장했어요" : "메모를 지웠어요");
+    return true;
+  } catch {
+    showToast("메모를 저장하지 못했어요. 잠시 후 다시 시도해 주세요");
+    return false;
   }
 }
 
@@ -121,5 +148,7 @@ export function useSaved({ refresh = false }: Options = {}) {
     reload: () => {
       if (deviceId) void load(deviceId);
     },
+    saveMemo: async (sentenceId: number, memo: string) =>
+      deviceId ? saveMemo(deviceId, sentenceId, memo) : false,
   };
 }
