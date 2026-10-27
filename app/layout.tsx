@@ -37,7 +37,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className={`${jua.variable} ${gaegu.variable} antialiased`}>
       <body className="bg-notebook min-h-screen pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
-        <div className="relative mx-auto max-w-[620px] px-[18px] pt-5 pb-40 note:pr-5 note:pl-14">
+        {/* 아래 여백 192px: 맨 아래까지 내려도 내용이 언덕 위 토끼(뛸 때 최대 약 188px)와 겹치지 않게 */}
+        <div className="relative mx-auto max-w-[620px] px-[18px] pt-5 pb-48 note:pr-5 note:pl-14">
           {/* 아주 좁은 화면에서는 날짜가 로고 아래 줄로 내려간다 */}
           <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-2">
             <Logo />
