@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* 다크 모드는 <html class="dark"> 로 켠다 (lib/theme.ts 의 <head> 스크립트와 전환 버튼이 붙이고 뗀다) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* 디자인 데모(design/today-sentence.html)의 색 토큰. 다크 모드는 아래에서 값만 바꾼다 */
 :root {
   --paper: #fbf8ef;
@@ -18,23 +21,22 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #1f2430;
-    --line: #2c3546;
-    --margin: #6e3e44;
-    --ink: #efe9dc;
-    --ink-soft: #aba394;
-    --strip: #2a3140;
-    --hill: #4f7a3e;
-    --blue: #34506f;
-    --yellow: #5b5430;
-    --pink: #64403b;
-    --green: #3d5734;
-    --lavender: #4c3f66;
-    --shadow: rgba(0, 0, 0, 0.4);
-    color-scheme: dark;
-  }
+/* 데모의 밤 노트 색 (남색 종이) */
+:root.dark {
+  --paper: #1f2430;
+  --line: #2c3546;
+  --margin: #6e3e44;
+  --ink: #efe9dc;
+  --ink-soft: #aba394;
+  --strip: #2a3140;
+  --hill: #4f7a3e;
+  --blue: #34506f;
+  --yellow: #5b5430;
+  --pink: #64403b;
+  --green: #3d5734;
+  --lavender: #4c3f66;
+  --shadow: rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
 }
 
 /* 데모의 @media (max-width: 480px) 와 같은 경계: 481px 부터 넓은 화면 */
