@@ -14,7 +14,7 @@ export default function HomeView() {
   const [placeholder, setPlaceholder] = useState("오늘의 문장을 펼치는 중…");
   const [drawCount, setDrawCount] = useState(0);
   const [drawing, setDrawing] = useState(false);
-  const { savedIds, toggle, pending } = useSaved();
+  const { ids: savedIds, pendingIds, ready, toggle } = useSaved();
 
   useEffect(() => {
     let ignore = false;
@@ -65,8 +65,8 @@ export default function HomeView() {
         <SketchButton
           variant="ghost"
           aria-pressed={saved}
-          disabled={!sentence || pending}
-          onClick={() => sentence && toggle(sentence.id)}
+          disabled={!sentence || !ready || pendingIds.has(sentence.id)}
+          onClick={() => sentence && toggle(sentence)}
         >
           {saved ? "저장됨" : "저장하기"}
         </SketchButton>

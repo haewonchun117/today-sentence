@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSaved } from "@/lib/use-saved";
 
 const TABS = [
   { href: "/", label: "홈" },
@@ -11,6 +12,7 @@ const TABS = [
 
 export default function NavTabs() {
   const pathname = usePathname();
+  const { items } = useSaved();
 
   return (
     <nav aria-label="메뉴" className="mt-[22px] mb-[30px] flex flex-wrap gap-2.5">
@@ -26,6 +28,12 @@ export default function NavTabs() {
             }`}
           >
             {tab.label}
+            {tab.href === "/saved" && items.length > 0 && (
+              <span className="ml-1 text-[0.85rem] text-ink-soft">
+                {items.length}
+                <span className="sr-only">개</span>
+              </span>
+            )}
           </Link>
         );
       })}
